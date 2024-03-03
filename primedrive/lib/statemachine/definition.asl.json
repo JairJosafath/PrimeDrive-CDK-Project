@@ -1,0 +1,217 @@
+{
+  "StartAt": "Parallel",
+  "States": {
+    "Parallel": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "Store uploaded object",
+          "States": {
+            "Store uploaded object": {
+              "Type": "Task",
+              "Resource": "arn:aws:states:::dynamodb:putItem",
+              "Parameters": {
+                "TableName": "${PrimeDriveTable}",
+                "Item": {
+                  "pk": {
+                    "S.$": "States.Format('user#{}',$.sub)"
+                  },
+                  "sk": {
+                    "S.$": "States.Format('#file#{}',$.key)"
+                  },
+                  "key": {
+                    "S.$": "$.key"
+                  },
+                  "bucket": {
+                    "S.$": "$.bucket"
+                  }
+                }
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "DetectLabels",
+          "States": {
+            "DetectLabels": {
+              "Type": "Task",
+              "Parameters": {
+                "Image": {
+                  "S3Object": {
+                    "Bucket.$": "$.bucket",
+                    "Name.$": "$.key"
+                  }
+                }
+              },
+              "Resource": "arn:aws:states:::aws-sdk:rekognition:detectLabels",
+              "Next": "Map",
+              "ResultPath": "$.resultDetectLabels"
+            },
+            "Map": {
+              "Type": "Map",
+              "ItemProcessor": {
+                "ProcessorConfig": {
+                  "Mode": "INLINE"
+                },
+                "StartAt": "Get Index",
+                "States": {
+                  "Get Index": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::dynamodb:getItem",
+                    "Parameters": {
+                      "TableName": "${PrimeDriveTable}",
+                      "Key": {
+                        "pk": {
+                          "S.$": "States.Format('user#{}',$.sub)"
+                        },
+                        "sk": {
+                          "S.$": "States.Format('#index#{}',$.resultMap.Name)"
+                        }
+                      }
+                    },
+                    "Next": "Choice",
+                    "ResultPath": "$.resultGetItem",
+                    "Comment": "Check if the index already exists for the user"
+                  },
+                  "Choice": {
+                    "Type": "Choice",
+                    "Choices": [
+                      {
+                        "Variable": "$.resultGetItem.Item",
+                        "IsPresent": true,
+                        "Next": "Update Index"
+                      }
+                    ],
+                    "Default": "Store Index"
+                  },
+                  "Update Index": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::dynamodb:updateItem",
+                    "Parameters": {
+                      "TableName": "${PrimeDriveTable}",
+                      "Key": {
+                        "pk": {
+                          "S.$": "States.Format('user#{}',$.sub)"
+                        },
+                        "sk": {
+                          "S.$": "States.Format('#index#{}',$.resultMap.Name)"
+                        }
+                      },
+                      "UpdateExpression": "SET #keys = list_append(#keys, :keys)",
+                      "ExpressionAttributeNames": {
+                        "#keys": "keys"
+                      },
+                      "ExpressionAttributeValues": {
+                        ":keys": {
+                          "L": [
+                            {
+                              "M": {
+                                "key": {
+                                  "S.$": "$.key"
+                                },
+                                "confidence": {
+                                  "N.$": "States.Format('{}',$.resultMap.Confidence)"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "End": true
+                  },
+                  "Store Index": {
+                    "Type": "Task",
+                    "Resource": "arn:aws:states:::dynamodb:putItem",
+                    "Parameters": {
+                      "TableName": "${PrimeDriveTable}",
+                      "Item": {
+                        "pk": {
+                          "S.$": "States.Format('user#{}',$.sub)"
+                        },
+                        "sk": {
+                          "S.$": "States.Format('#index#{}',$.resultMap.Name)"
+                        },
+                        "categories": {
+                          "L": [
+                            {
+                              "M": {
+                                "Name.$": "$.resultMap.Name"
+                              }
+                            }
+                          ]
+                        },
+                        "aliases": {
+                          "L": [
+                            {
+                              "M": {
+                                "Name.$": "$.resultMap.Name"
+                              }
+                            }
+                          ]
+                        },
+                        "keys": {
+                          "L": [
+                            {
+                              "M": {
+                                "key": {
+                                  "S.$": "$.key"
+                                },
+                                "confidence": {
+                                  "N.$": "States.Format('{}',$.resultMap.Confidence)"
+                                }
+                              }
+                            }
+                          ]
+                        }
+                      }
+                    },
+                    "End": true
+                  }
+                }
+              },
+              "End": true,
+              "ItemsPath": "$.resultDetectLabels.Labels",
+              "ResultPath": "$.resultMap",
+              "Comment": "Process all labels returned by Rek",
+              "ItemSelector": {
+                "sub.$": "$.sub",
+                "key.$": "$.key",
+                "resultMap.$": "$$.Map.Item.Value"
+              }
+            }
+          }
+        }
+      ],
+      "Next": "Update uploaded object",
+      "ResultPath": "$.resultParallel"
+    },
+    "Update uploaded object": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "${PrimeDriveTable}",
+        "Key": {
+          "pk": {
+            "S.$": "States.Format('user#{}',$.sub)"
+          },
+          "sk": {
+            "S.$": "States.Format('#file#{}',$.key)"
+          }
+        },
+        "UpdateExpression": "Set #labels = :labels",
+        "ExpressionAttributeNames": {
+          "#labels": "labels"
+        },
+        "ExpressionAttributeValues": {
+          ":labels": {
+            "S.$": "States.JsonToString($.resultParallel[1].resultDetectLabels.Labels)"
+          }
+        }
+      },
+      "End": true,
+      "Comment": "at Rek results to the object in ddb"
+    }
+  }
+}
