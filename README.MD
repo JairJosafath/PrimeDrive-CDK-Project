@@ -1,4 +1,8 @@
 # PrimeDrive
+
+### architecture
+![architecture](img/PD_diagram.png)
+
 ## This is a CDK project covering the following AWS services:
 - S3
 - Lambda
