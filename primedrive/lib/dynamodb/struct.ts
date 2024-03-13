@@ -42,14 +42,14 @@ export class PrimeDriveTable extends Construct {
                 dynamodb.tableArn
             ],
             conditions: {
-                "ForAllValues:StringEquals": {
-                    "dynamodb:LeadingKeys": [
-                        "#user"
-                    ],
-                    "dynamodb:Attributes": [
-                        // attributes where the user can change the value
-                    ]
-                }
+                // "ForAllValues:StringEquals": {
+                //     "dynamodb:LeadingKeys": [
+                //         "#user"
+                //     ],
+                //     "dynamodb:Attributes": [
+                //         // attributes where the user can change the value
+                //     ]
+                // }
             }
         }))
 

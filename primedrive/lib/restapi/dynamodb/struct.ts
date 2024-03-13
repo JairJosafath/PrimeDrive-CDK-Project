@@ -1,7 +1,7 @@
 import { AuthorizationType, AwsIntegration, IAuthorizer, RestApi } from "aws-cdk-lib/aws-apigateway";
 import { Role } from "aws-cdk-lib/aws-iam";
 import { Construct } from "constructs";
-import { integrationOptions, objectRequestParamters } from "../struct";
+import { integrationOptions, integrationResponses, methodResponses, objectRequestParamters } from "../struct";
 
 export class DynamoDBResource extends Construct {
     constructor(
@@ -24,11 +24,10 @@ export class DynamoDBResource extends Construct {
                         `
                     {
                         "TableName": "${tableName}",
-                        "ProjectionExpression": "key",
-                        "KeyConditionExpression": "#pk = :pkval AND #sk = :skval",
+                        "KeyConditionExpression": "#pk = :pkval AND begins_with(#sk, :skval)",
                         "ExpressionAttributeValues": {
-                            ":pkval": {"S": "#user#$util.escapeJavaScript($$context.authorizer.claims.sub).replaceAll("\\'","")"},
-                            ":skval": {"S": "#files"}
+                            ":pkval": {"S": "user#$util.escapeJavaScript($$context.authorizer.claims.sub).replaceAll("\\'","")"},
+                            ":skval": {"S": "#file#"}
                         },
                         "ExpressionAttributeNames": {
                             "#pk": "pk",
@@ -37,11 +36,52 @@ export class DynamoDBResource extends Construct {
                     }
                     `
                 },
-                ...integrationOptions
+                
+            requestParameters:{
+                "integration.request.querystring.index": "method.request.querystring.index"
+            },
+                integrationResponses
             }
         }),
-            { authorizationType: AuthorizationType.COGNITO, authorizer }
+        { authorizationType: AuthorizationType.COGNITO, authorizer, requestParameters:{
+            "method.request.querystring.index": false,
+        },
+        methodResponses }
         )
+
+    const queryRes = api.root.addResource("query")
+    queryRes.addMethod("GET", new AwsIntegration({
+        service: "dynamodb", integrationHttpMethod: "POST", action: "Query", options: {
+            credentialsRole,
+            requestTemplates: {
+                "application/json":
+                    `
+                {
+                    "TableName": "${tableName}",
+                    "KeyConditionExpression": "#pk = :pkval AND begins_with(#sk, :skval)",
+                    "ExpressionAttributeValues": {
+                        ":pkval": {"S": "user#$util.escapeJavaScript($$context.authorizer.claims.sub).replaceAll("\\'","")"},
+                        ":skval": {"S": "#index#$util.escapeJavaScript($input.params('index')).replaceAll("\\'","")"}
+                    },
+                    "ExpressionAttributeNames": {
+                        "#pk": "pk",
+                        "#sk": "sk"
+                    }
+                }
+                `
+            },
+            integrationResponses,
+            requestParameters:{
+                "integration.request.querystring.index": "method.request.querystring.index"
+            }
+
+        }
+    }),
+        { authorizationType: AuthorizationType.COGNITO, authorizer, requestParameters:{
+            "method.request.querystring.index": false,
+        },
+        methodResponses }
+    )
 
     }
 }
