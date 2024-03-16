@@ -1,0 +1,7 @@
+{
+    "name": "thumber",
+    "version": "0.1.0",
+    "dependencies": {
+        "sharp": "^0.33.2"
+    }
+}

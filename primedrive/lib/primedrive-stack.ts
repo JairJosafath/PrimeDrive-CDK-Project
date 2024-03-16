@@ -5,6 +5,7 @@ import { PrimeDriveStorage } from './storage/struct';
 import { PrimeDriveUserPool } from './userpool/struct';
 import { PrimeDriveRestAPI } from './restapi/struct';
 import { PrimeDriveStateMachine } from './statemachine/struct';
+import { stat } from 'fs';
 
 export class PrimeDriveStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -23,6 +24,8 @@ export class PrimeDriveStack extends cdk.Stack {
 
     // s3 storage with userfiles
     const s3 = new PrimeDriveStorage(this, "PrimeDriveStorage", statemachine.statemachine)
+    s3.bucket.grantReadWrite(statemachine.thumberFunction)
+
     // apigateway restapi
     const api = new PrimeDriveRestAPI(this, "PrimeDriveRestAPI",
       { pool: userPool.userPool, client: userPool.clientId, integrationRole: userPool.integrationRole},

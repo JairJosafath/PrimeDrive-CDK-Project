@@ -30,3 +30,4 @@ Please note that I explicitly set my region to `eu-central-1` to make sure Rekog
 - Add a thumbnail generation step to the Step Functions state machine.
 - Add a frontend to the application to make it more user-friendly.
 - Refacror the code so it's more organized and easier to read.
+- Modify Policies to be more restrictive.
