@@ -25,7 +25,7 @@ export default function PhotosContainer({ token }) {
               src={url}
               alt={title}
               className="h-[128px] w-[128px] p-1 hover:li cursor-pointer hover:brightness-125 active:scale-95"
-              // onClick={()=>getPresignedUrl(title)}
+              onClick={()=>setPhoto(()=>{return{title}})}
             />
           </div>
         ))}
@@ -51,7 +51,12 @@ export default function PhotosContainer({ token }) {
           <img src={photo?.url} alt={photo?.title} className="" />
 
           <div className="flex gap-4 p-2 bg-neutral-900 cursor-pointer active:scale-95 rounded m-6">
-            <label className=" cursor-pointer">Download</label>
+            <label className=" cursor-pointer" onClick={(e)=>{
+              e.stopPropagation();
+              // download photo
+              window.open(photo.url, "_blank")
+
+              console.log("download")}}>Download</label>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -135,6 +140,22 @@ function useThumber(token) {
     if(reload)
     getKeys();
   }, [reload, token])
+
+  useEffect(()=>{
+    if(!photo?.title) return
+    async function getPresignedUrl(){
+      const res = await fetch(`${baseUrl}/presigned?action=get&key=${photo.title}`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+      const data = await res.json();
+      const url = JSON.parse(data.body).url;
+      setPhoto({...photo, url})
+    }
+    getPresignedUrl();
+  },[photo?.title,token])
 
   return { thumbs, loading, error, photo, setPhoto, setReload};
 }
