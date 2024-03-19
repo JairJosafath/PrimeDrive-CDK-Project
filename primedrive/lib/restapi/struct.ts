@@ -47,7 +47,7 @@ export const integrationResponses: IntegrationResponse[] = [
       "method.response.header.Access-Control-Allow-Headers":
         "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'",
       "method.response.header.Access-Control-Allow-Methods":
-        "'GET,OPTIONS,POST'",
+        "'GET,OPTIONS,POST,PUT'",
         "method.response.header.Content-Length": "integration.response.header.Content-Length",
         "method.response.header.Content-Type": "integration.response.header.Content-Type",
         "method.response.header.Date": "integration.response.header.Date",

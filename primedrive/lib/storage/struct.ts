@@ -1,4 +1,4 @@
-import { BlockPublicAccess, Bucket } from "aws-cdk-lib/aws-s3";
+import { BlockPublicAccess, Bucket, HttpMethods } from "aws-cdk-lib/aws-s3";
 import {
   aws_iam,
   aws_lambda,
@@ -29,6 +29,15 @@ export class PrimeDriveStorage extends Construct {
       removalPolicy: RemovalPolicy.DESTROY,
       blockPublicAccess: BlockPublicAccess.BLOCK_ALL,
       autoDeleteObjects: true,
+      cors:[
+        {
+          allowedOrigins: ["*"],
+          allowedMethods: [HttpMethods.GET, HttpMethods.POST, HttpMethods.PUT, HttpMethods.DELETE, HttpMethods.HEAD],
+          allowedHeaders: ["*"],
+          exposedHeaders: ["ETag"],
+          maxAge: 3000,
+        }
+      ]
     });
     this.bucket = storage;
 

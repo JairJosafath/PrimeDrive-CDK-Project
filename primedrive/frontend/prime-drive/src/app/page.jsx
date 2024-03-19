@@ -1,11 +1,16 @@
 "use client";
 import Auth from "@/components/auth";
 import PhotosContainer from "@/components/photos.container";
+import SearchContainer from "@/components/search.container";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 export default function Home() {
   const [auth,setAuth] = useState({ authenticated: false });
+  const input = useRef(null);
+  const {file, setFile, loading, hotreload, setHotReload} = useUploader(auth?.idToken);
+  const [search, setSearch] = useState("");
+  const searchInput = useRef(null);
 
   useEffect(() => {
     const auth = localStorage.getItem("auth");
@@ -20,6 +25,11 @@ export default function Home() {
     }
   },[])
 
+  useEffect(() => {
+    if(!search&&searchInput?.current?.value)
+    searchInput.current.value = "";
+  },[search])
+
   return (
     <main>
       {auth.authenticated
@@ -32,6 +42,7 @@ export default function Home() {
               type="text"
               placeholder="Search"
               className="w-96 rounded bg-neutral-800 p-2"
+              ref={searchInput}
             />
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -40,6 +51,9 @@ export default function Home() {
               strokeWidth={1.5}
               stroke="currentColor"
               className="w-6 h-6 hover:text-primary-500 cursor-pointer hover:bg-white hover:text-black hover:h-10 hover:py-2 w-8 rounded-r-md active:scale-95 active:bg-neutral-200"
+              onClick={() => {
+                setSearch(searchInput.current.value);
+              }}
             >
               <path
                 strokeLinecap="round"
@@ -66,16 +80,82 @@ export default function Home() {
               />
             </svg>
 
-            <label className="cursor-pointer">Upload</label>
+            <label className="cursor-pointer" onClick={()=>{
+              input.current.click()
+            }}>Upload</label>
+            <input type="file" className="hidden" ref={input} 
+            onChange={(e)=>{
+               setFile(()=>e.target.files[0]);
+               input.current.value = null;
+            }}
+            />
           </div>
             <label className="rounded-full bg-pink-300 w-8 h-8 justify-center flex items-center" >{auth?.username[0].toUpperCase() }</label>
         </div>
       </header>
-      <PhotosContainer token={auth?.idToken}/>
+      {!search?<PhotosContainer token={auth?.idToken} hotreload={hotreload} setHotReload={setHotReload}/>:<SearchContainer token={auth?.idToken} search={search} setSearch={setSearch}/>}
       </>
       :
       <Auth setAuth={setAuth}/>
       }
     </main>
   );
+}
+const baseUrl =
+  "https://1tkzycmfi8.execute-api.eu-central-1.amazonaws.com/prod/";
+function useUploader(token){
+  const [hotreload, setHotReload] = useState(false);
+  const [file, setFile] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+
+  async function getPresignedUrl(key){
+    if (!key) return;
+    const response = await fetch(`${baseUrl}presigned?action=put&key=${key}`,
+    {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`
+      }
+    })
+    const result = await response.json();
+    const url = JSON.parse(result.body).url;
+    console.log({url})
+    return url;
+  }
+    
+
+  async function uploadFile(){
+    if (!file) return;
+    const title = file.name;
+    const presignedUrl = await getPresignedUrl(title);
+    if (!presignedUrl) return;
+    const response = await fetch(presignedUrl, {
+      method: "PUT",
+      body: file,
+      headers:{
+        "Content-Type": file.type
+      }
+    });
+
+    if (response.status === 200) {
+      console.log("success");
+      setHotReload(true);
+    } else {
+      console.log("error");
+    }
+
+    setLoading(false);
+    setFile(null);
+
+  }
+
+  useEffect(() => {
+    uploadFile();
+  }, [file, token]);
+
+
+  return {
+    file, setFile, error, loading, hotreload, setHotReload
+  }
 }
