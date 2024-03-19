@@ -10,10 +10,11 @@ export class PrimeDriveStateMachine extends Construct {
     // readonly integrationRole
     readonly statemachine
     readonly thumberFunction
+    readonly thumbBucket
     constructor(scope: Construct, id: string, table: TableV2) {
         super(scope, id);
 
-        const thumbBucket = new aws_s3.Bucket(this, "ThumberBucket", {
+        this.thumbBucket = new aws_s3.Bucket(this, "ThumberBucket", {
             removalPolicy: RemovalPolicy.DESTROY,
             autoDeleteObjects: true,
           });
@@ -29,14 +30,14 @@ export class PrimeDriveStateMachine extends Construct {
                 path.join(__dirname, "../functions/thumber")
               ),
               environment: {
-                THUMBER_BUCKET: thumbBucket.bucketName,
+                THUMBER_BUCKET: this.thumbBucket.bucketName,
               },
               timeout: Duration.seconds(30),
               memorySize: 1536,
             }
           );
       
-          thumbBucket.grantReadWrite(this.thumberFunction)
+          this.thumbBucket.grantReadWrite(this.thumberFunction)
 
         this.statemachine = new StateMachine(this, "PrimeDriveStateMachine2", {
             definitionBody: DefinitionBody.fromFile(path.join(__dirname, 'definition.asl.json')),

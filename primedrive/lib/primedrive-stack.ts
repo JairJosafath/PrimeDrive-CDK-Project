@@ -31,6 +31,7 @@ export class PrimeDriveStack extends cdk.Stack {
       { pool: userPool.userPool, client: userPool.clientId, integrationRole: userPool.integrationRole},
       { bucketName: s3.bucket.bucketName, integrationRole: s3.integrationRole, presigner: s3.presignedUrlFunction  },
       { integrationRole: table.integrationRole, tableName: table.table.tableName },
+      { thumbBucket: statemachine.thumbBucket}
     )
 
   }
