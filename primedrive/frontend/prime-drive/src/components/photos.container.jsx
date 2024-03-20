@@ -1,5 +1,3 @@
-import { get } from "http";
-import { useEffect, useState } from "react";
 import useThumber from "@/hooks/useThumber";
 const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
 

@@ -6,7 +6,7 @@ const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
 export default function useUploader(token){
   
   const input = useRef(null);  
-    const [hotreload, setHotReload] = useState(false);
+    const [reload, setReload] = useState(false);
     const [file, setFile] = useState(null);
     const [error, setError] = useState(null);
     const [loading, setLoading] = useState(false);
@@ -43,7 +43,7 @@ export default function useUploader(token){
   
       if (response.status === 200) {
         console.log("success");
-        setHotReload(true);
+        setReload(true);
       } else {
         console.log("error");
       }
@@ -59,6 +59,6 @@ export default function useUploader(token){
   
   
     return {
-      file, setFile, error, loading, hotreload, setHotReload, input, 
+      file, setFile, error, loading, reload, setReload, input, 
     }
   }

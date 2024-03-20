@@ -3,30 +3,51 @@ import Auth from "@/components/auth";
 import PhotosContainer from "@/components/photos.container";
 import SearchContainer from "@/components/search.container";
 import Topbar from "@/components/topbar";
-import Image from "next/image";
-import { useEffect, useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import useUploader from "@/hooks/useUploader";
 import useAuth from "@/hooks/useAuth";
-const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
 
 export default function Home() {
   const [search, setSearch] = useState("");
   const searchInput = useRef(null);
-  const {file, setFile, loading, hotreload, setHotReload, input} = useUploader(auth?.idToken);
-  const {auth, setAuth} = useAuth();
 
+  const { auth, setAuth } = useAuth();
+  const { file, setFile, loading, reload, setReload, input } =
+    useUploader(auth?.idToken);
 
-
+      
+    useEffect(() => {
+      if(!search&&searchInput?.current?.value)
+      searchInput.current.value = "";
+    },[search])
   return (
     <main>
-      {auth.authenticated
-        ?<>
-        <Topbar searchInput={searchInput} input={input} setFile={setFile} auth={auth} setSearch={setSearch}/>
-      {!search?<PhotosContainer token={auth?.idToken} hotreload={hotreload} setHotReload={setHotReload}/>:<SearchContainer token={auth?.idToken} search={search} setSearch={setSearch}/>}
-      </>
-      :
-      <Auth setAuth={setAuth}/>
-      }
+      {auth.authenticated ? (
+        <>
+          <Topbar
+            searchInput={searchInput}
+            input={input}
+            setFile={setFile}
+            auth={auth}
+            setSearch={setSearch}
+          />
+          {!search ? (
+            <PhotosContainer
+              token={auth?.idToken}
+              reload={reload}
+              setReload={setReload}
+            />
+          ) : (
+            <SearchContainer
+              token={auth?.idToken}
+              search={search}
+              setSearch={setSearch}
+            />
+          )}
+        </>
+      ) : (
+        <Auth setAuth={setAuth} />
+      )}
     </main>
   );
 }

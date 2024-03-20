@@ -7,7 +7,6 @@ export default function useAuth(){
   
     useEffect(() => {
       const auth = localStorage.getItem("auth");
-      // check expiration
       const exp = JSON.parse(auth)?.exp;
       if (exp < Date.now()) {
         setAuth(() => ({ authenticated: false }));
@@ -17,11 +16,6 @@ export default function useAuth(){
         setAuth(() => JSON.parse(auth));
       }
     },[])
-  
-    useEffect(() => {
-      if(!search&&searchInput?.current?.value)
-      searchInput.current.value = "";
-    },[search])
   
     return {auth, setAuth};
   }
