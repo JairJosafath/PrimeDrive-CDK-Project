@@ -3,8 +3,8 @@
 ### architecture
 ![architecture](img/PD_diagram.png)
 
-### demo video
-[![Watch the video]()](img/PD-demo.mp4)
+### demo screenshot
+![demo](img/Screenshot%202024-03-20%20160833hh.png)
 
 ## This is a CDK project covering the following AWS services:
 - S3
