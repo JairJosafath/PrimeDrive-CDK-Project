@@ -1,8 +1,10 @@
 import { get } from "http";
 import { useEffect, useState } from "react";
+import useThumber from "@/hooks/useThumber";
+const baseUrl = process.env.NEXT_PUBLIC_ENDPOINT||"";
 
 export default function PhotosContainer({ token }) {
-  const { thumbs, photo, setPhoto, loading, error, setReload } = useThumber(token);
+  const { thumbs, photo, setPhoto, loading, error, setReload } = useThumber(token,"");
 
   return (
     <div>
@@ -17,10 +19,10 @@ export default function PhotosContainer({ token }) {
 
       </div>
       
-      <main className="grid grid-cols-4 gap-1 auto-rows-max p-2">
+      <main className="grid grid-cols-4 gap-1 auto-rows-max p-2 mx-12">
         {thumbs?.slice(0, 10).map(({ title, url }, index) => (
           <div key={index}>
-            <label className="truncate w-2">{title.slice(0, 10)}</label>
+            <label className="truncate w-2">{title}</label>
             <img
               src={url}
               alt={title}
@@ -53,10 +55,7 @@ export default function PhotosContainer({ token }) {
           <div className="flex gap-4 p-2 bg-neutral-900 cursor-pointer active:scale-95 rounded m-6">
             <label className=" cursor-pointer" onClick={(e)=>{
               e.stopPropagation();
-              // download photo
-              window.open(photo.url, "_blank")
-
-              console.log("download")}}>Download</label>
+              window.open(photo.url, "_blank")}}>Download</label>
             <svg
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
@@ -78,84 +77,3 @@ export default function PhotosContainer({ token }) {
   );
 }
 
-const baseUrl =
-  "https://1tkzycmfi8.execute-api.eu-central-1.amazonaws.com/prod/";
-
-function useThumber(token) {
-  const [thumbs, setThumbs] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState();
-  const [keys, setKeys] = useState([]);
-  const [photo, setPhoto] = useState({ title: "", url: "" });
-  const [reload, setReload] = useState(false);
-
-  async function getKeys() {
-    const res = await fetch(`${baseUrl}/files`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
-    const data = await res.json();
-    const tmpKeys = [];
-
-    data.Items.forEach((item) => {
-      tmpKeys.push(item.key.S);
-    });
-
-    setKeys([...tmpKeys]);
-    setReload(false);
-  }
-
-  useEffect(() => {
-    async function fetchThumbs() {
-      const thumbsTmp = [];
-      keys.forEach(async (key) => {
-        const t = key?.split("/").splice(0, 2).join("/");
-        const title = key?.replace(t + "/", "");
-        const res = await fetch(`${baseUrl}/object/${title}`, {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`
-          },
-        });
-
-        
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        thumbsTmp.push({ title, url });
-        setThumbs([...thumbsTmp]);
-      });
-
-      setLoading(false);
-    }
-    fetchThumbs();
-  }, [keys.length]);
-
-  useEffect(() => {
-    getKeys();
-  }, [token]);
-
-  useEffect(()=>{
-    if(reload)
-    getKeys();
-  }, [reload, token])
-
-  useEffect(()=>{
-    if(!photo?.title) return
-    async function getPresignedUrl(){
-      const res = await fetch(`${baseUrl}/presigned?action=get&key=${photo.title}`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      });
-      const data = await res.json();
-      const url = JSON.parse(data.body).url;
-      setPhoto({...photo, url})
-    }
-    getPresignedUrl();
-  },[photo?.title,token])
-
-  return { thumbs, loading, error, photo, setPhoto, setReload};
-}

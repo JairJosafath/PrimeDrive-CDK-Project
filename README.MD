@@ -23,11 +23,14 @@ Please note that I explicitly set my region to `eu-central-1` to make sure Rekog
 - The image is processed by Rekognition to detect labels. These labels are stored in a DynamoDB table.
 ---
 
+**Backend testing with Postman**:\
+workspace url: https://www.postman.com/navigation-explorer-20792451/workspace/primedrive/collection/28154890-0163d560-b86c-442c-b12d-f2e5fa73d9fe?action=share&creator=28154890
+
 **TODO**:
 - ~~Add the query endpoint to the API Gateway, so the user can query the DynamoDB table for images based on labels.~~
 
 **Optional**:
 - ~~Add a thumbnail generation step to the Step Functions state machine.~~
-- Add a frontend to the application to make it more user-friendly.
+- ~~Add a frontend to the application to make it more user-friendly.~~
 - Refacror the code so it's more organized and easier to read.
 - Modify Policies to be more restrictive.
