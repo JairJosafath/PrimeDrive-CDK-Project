@@ -32,5 +32,5 @@ workspace url: https://www.postman.com/navigation-explorer-20792451/workspace/pr
 **Optional**:
 - ~~Add a thumbnail generation step to the Step Functions state machine.~~
 - ~~Add a frontend to the application to make it more user-friendly.~~
-- Refacror the code so it's more organized and easier to read.
+- ~~Refacror the code so it's more organized and easier to read.~~
 - Modify Policies to be more restrictive.
